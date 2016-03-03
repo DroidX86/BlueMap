@@ -9,11 +9,14 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:context="com.mcproject.rounak.bluemap.BlueList"
-    tools:showIn="@layout/activity_blue_list">
+    tools:context=".BlueMapMainList"
+    >
 
-    <TextView
+    <ListView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!" />
+        android:id="@+id/bt_list"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true"
+        android:choiceMode="none" />
 </RelativeLayout>
