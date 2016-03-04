@@ -14,7 +14,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -27,43 +26,54 @@ import java.util.TimerTask;
 public class BlueMapMainList extends AppCompatActivity {
 
     private ListView btList;
-    private HashMap<String, Short> btNeighbors = new HashMap<>();
+    private HashMap<String, Float> btNeighbors = new HashMap<>();
     //private ArrayList<String> found = new ArrayList<>();
-    private BluetoothAdapter mBTAdapter;
-    //private final BroadcastReceiver myBTRecv;
+    private BluetoothAdapter myBTAdapter;
+    private final BroadcastReceiver myBTRecv;
     private Timer refresh;
 
     public final int REQUEST_ENABLE_BT = 1;
+    public final int REFRESH_INTERVAL = 30000;
 
-    //public BlueMapMainList() {
-    private final BroadcastReceiver myBTRecv = new BroadcastReceiver() {
+    public BlueMapMainList() {
+        myBTRecv = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 String action = intent.getAction();
                 if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+                    /* Get device name and rssi value */
                     BluetoothDevice nghbr = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    //Log.d("BTLIST", "Found: " + nghbr.getName());
-                    //found.add(nghbr.getName());
                     short rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
-                    btNeighbors.put(nghbr.getName(), rssi);
-                    Log.d("BTLIST", nghbr.getName() + ":\t" + rssi);
+                    Log.d("BTLIST", "Discovered: " + nghbr.getName() + ":\t" + rssi);
+                    /* Approximate current distance */
+                    float distance = getDistanceApproximation(nghbr.getName(),rssi);
+                    btNeighbors.put(nghbr.getName(), distance);
+                    /* To show list */
                     List<String> vals = new ArrayList<>();
-
-                    for (Map.Entry<String, Short> entry : btNeighbors.entrySet()) {
-                        String toShow = entry.getKey() + "\n" + entry.getValue();
+                    for (Map.Entry<String, Float> entry : btNeighbors.entrySet()) {
+                        String toShow = entry.getKey() + ":::" + entry.getValue();
                         vals.add(toShow);
-                        Log.d("BTLIST", "Adding: " + toShow);
                     }
 
-                    btList.setAdapter(new ArrayAdapter<>(context, android.R.layout.simple_expandable_list_item_1, vals));
+                    btList.setAdapter(new BTArrayAdapter(context, vals));
                 }
             }
         };
-    //}
+    }
+
+    /**
+     * @param name Name of bluetooth device
+     * @param rssi Current RSSI value for device
+     * @return Float current distance approximation
+     */
+    protected float getDistanceApproximation(String name, short rssi) {
+        /* TODO: add distance approximation method */
+        return -1;
+    }
 
     private void doDiscovery() {
         Log.d("BTLIST", "Gonna start discovery");
-        mBTAdapter.startDiscovery();
+        myBTAdapter.startDiscovery();
     }
 
     @Override
@@ -75,15 +85,15 @@ public class BlueMapMainList extends AppCompatActivity {
 
         btList = (ListView) findViewById(R.id.bt_list);
 
-        mBTAdapter = BluetoothAdapter.getDefaultAdapter();
+        myBTAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        if (mBTAdapter == null) {
+        if (myBTAdapter == null) {
             Log.d("BTLIST", "No BT adpater installed");
             showError();
             return;
         }
 
-        if (!mBTAdapter.isEnabled()) {
+        if (!myBTAdapter.isEnabled()) {
             Log.d("BTLIST", "BT adapter is not enabled");
             Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBT, REQUEST_ENABLE_BT);
@@ -142,7 +152,7 @@ public class BlueMapMainList extends AppCompatActivity {
                     }
                 });
             }
-        }, 0, 30000);       /* refresh every 30 seconds */
+        }, 0, REFRESH_INTERVAL);       /* refresh every 30 seconds */
     }
 
     @Override
