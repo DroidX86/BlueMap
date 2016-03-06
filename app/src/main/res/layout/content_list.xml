@@ -10,13 +10,15 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".BlueMapMainList"
-    >
+    android:weightSum="1">
 
     <ListView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/bt_list"
-        android:layout_alignParentTop="true"
+        android:choiceMode="none"
         android:layout_alignParentStart="true"
-        android:choiceMode="none" />
+        android:layout_weight="1.0"
+        android:layout_alignParentEnd="true" />
+
 </RelativeLayout>
