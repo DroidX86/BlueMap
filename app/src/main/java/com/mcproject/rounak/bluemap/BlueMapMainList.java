@@ -1,6 +1,7 @@
 package com.mcproject.rounak.bluemap;
 
 import android.app.AlertDialog;
+import android.app.FragmentTransaction;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -8,14 +9,20 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -42,9 +49,8 @@ public class BlueMapMainList extends AppCompatActivity {
     private HashMap<String, Double> btLPF = new HashMap<>();
 
     /* Calibration constants (Set from menu)*/
-    protected int curMode;
+    protected String curMode;
     protected Double txPower;
-    protected boolean showAll = false;
 
     /* Values for the propagation constant */
     public final Double n_avg = 4.2119;
@@ -52,14 +58,14 @@ public class BlueMapMainList extends AppCompatActivity {
     public final Double n_outdoor = 6.0;
 
     /* Mode definitons */
-    public final int INDOOR = 36;
-    public final int OUTDOOR = 30;
+    public final String AVERAGE = "Average";
+    public final String INDOOR = "Indoor";
+    public final String OUTDOOR = "Outdoor";
 
     /* misc. constants */
-    public final int REQUEST_ENABLE_BT = 1;
-
+    public final int REQUEST_ENABLE_BT = 69;
     /* Refreshing interval in milliseconds, must be more than 12 */
-    public final int REFRESH_INTERVAL = 15000;
+    public final int REFRESH_INTERVAL = 20000;
     /* Granularity of the distance scale */
     public final double SCALE_GRAN = 5.0;
     /* Weight of averaging RSSI */
@@ -71,13 +77,13 @@ public class BlueMapMainList extends AppCompatActivity {
     public final double FAR_TOP = 6.0;
 
     /* Distance class display strings */
-    public final String IMMEDIATE = "Very close (0 - 10m)";
-    public final String NEAR = "Nearby (10 - 20m)";
-    public final String FAR = "Far away (20 - 30m)";
-    public final String NOPE = "Not close (30m and more)";
+    public final String IMMEDIATE = "Very close";
+    public final String NEAR = "Nearby";
+    public final String FAR = "Far away";
+    public final String NOPE = "Not close";
 
     public BlueMapMainList() {
-        /* Set up calibration constants */
+        /* Set up calibration constants to default */
         curMode = INDOOR;
         txPower = -50.0;
 
@@ -97,15 +103,54 @@ public class BlueMapMainList extends AppCompatActivity {
                     /* Approximate current distance */
                     updateDistance(nghbr.getName(), rssi);
                     /* To show list */
-                    List<String> vals = new ArrayList<>();
-                    for (Map.Entry<String, String> entry : btDistClass.entrySet()) {
-                        String toShow = entry.getKey() + ":::" + entry.getValue();
-                        vals.add(toShow);
-                    }
-                    btList.setAdapter(new BTArrayAdapter(context, vals));
+                    refreshList(context);
                 }
             }
         };
+    }
+
+    protected void updatePreferences() {
+        SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
+        Log.d("BTPREF", "Reading shared prefs");
+
+        Double txPref = 50.0;
+        String gotVal = pref.getString("pref_key_tx_power", null);
+        if (gotVal != null) {
+            txPref = Double.parseDouble(gotVal);
+        }
+        Log.d("BTPREF", "Read txPower as: " + txPref);
+        this.txPower = txPref * -1.0;
+
+        int modePref = 1;
+        gotVal = pref.getString("pref_key_mode_choice", null);
+        if (gotVal != null) {
+            modePref = Integer.parseInt(gotVal);
+        }
+        Log.d("BTPREF", "Read location mode as: " + modePref);
+        switch (modePref){
+            case 1:
+                this.curMode = INDOOR;
+                break;
+            case 2:
+                this.curMode = OUTDOOR;
+                break;
+            default:
+                this.curMode = AVERAGE;
+        }
+    }
+
+    /**
+     * Update the list of devices
+     * @param context Passed from upper call
+     */
+    protected void refreshList(Context context) {
+        /* TODO: Make more efficient by adding instead of redrawing */
+        List<String> vals = new ArrayList<>();
+        for (Map.Entry<String, String> entry : btDistClass.entrySet()) {
+            String toShow = entry.getKey() + ":::" + entry.getValue();
+            vals.add(toShow);
+        }
+        btList.setAdapter(new BTArrayAdapter(context, vals));
     }
 
     /**
@@ -116,12 +161,15 @@ public class BlueMapMainList extends AppCompatActivity {
     protected Double formula (Double rssi) {
         Double upside = rssi + txPower;
         Double downside;
-        if (curMode == INDOOR) {
-            downside = -10 * n_indoor;
-        } else if (curMode == OUTDOOR) {
-            downside = -10 * n_outdoor;
-        } else {
-            downside = -10 * n_avg;
+        switch(curMode) {
+            case INDOOR:
+                downside = -10 * n_indoor;
+                break;
+            case OUTDOOR:
+                downside = -10 * n_outdoor;
+                break;
+            default:
+                downside = -10 * n_avg;
         }
         Double exp = upside / downside;
         return Math.pow(10.0, exp);
@@ -162,7 +210,7 @@ public class BlueMapMainList extends AppCompatActivity {
         btLPF.put(name, nextLPF);
         /* Estimate distance */
         Double distance = formula(nextLPF);
-        distance /= Math.pow(10, 6);       /* adjust units from mm*/
+        distance /= Math.pow(10, 6);       /* adjust units */
         Log.d("BTLIST", "Approximated distance to " + name + " is " + distance);
         btDistance.put(name, distance);
         /* Return the distance class description */
@@ -179,35 +227,9 @@ public class BlueMapMainList extends AppCompatActivity {
         myBTAdapter.startDiscovery();
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_list);
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-
-        btList = (ListView) findViewById(R.id.bt_list);
-
-        myBTAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        if (myBTAdapter == null) {
-            Log.d("BTLIST", "No BT adpater installed");
-            showError();
-            return;
-        }
-
-        if (!myBTAdapter.isEnabled()) {
-            Log.d("BTLIST", "BT adapter is not enabled");
-            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            startActivityForResult(enableBT, REQUEST_ENABLE_BT);
-        } else {
-            doDiscovery();
-        }
-
-        IntentFilter justFound = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        registerReceiver(myBTRecv, justFound);
-    }
-
+    /**
+     * Show error dialogue and exit
+     */
     private void showError() {
         AlertDialog errDiag = new AlertDialog.Builder(BlueMapMainList.this).create();
         errDiag.setTitle("Error");
@@ -223,6 +245,77 @@ public class BlueMapMainList extends AppCompatActivity {
         errDiag.show();
     }
 
+    /* All overridden function are below */
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_list);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
+        btList = (ListView) findViewById(R.id.bt_list);
+        btList.setLongClickable(true);
+
+        btList.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> adapter, View v, int pos, long id) {
+                /* Get name of clicked item */
+                String showing = (String) adapter.getAdapter().getItem(pos);
+                String name = showing.split(":::")[0];
+                /* Show more info in alert dialog */
+                final AlertDialog infoDiag = new AlertDialog.Builder(BlueMapMainList.this).create();
+                infoDiag.setTitle(name + "\'s details");    /* Set title */
+                String message = "Address:  " + btAddress.get(name);    /* Set address */
+                /* Build message to show */
+                message = message + "\nRSSI:  " + btRSSI.get(name) + " dBm";
+                Double d = btDistance.get(name);
+                DecimalFormat df = new DecimalFormat("##.####");
+                df.setRoundingMode(RoundingMode.CEILING);
+                message = message + "\nAppr.Distance:  " + df.format(d) + " m";
+                infoDiag.setMessage(message);
+                infoDiag.setButton(AlertDialog.BUTTON_NEUTRAL, "Dismiss", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+                Log.d("BTLIST", "Long press: pos=" + pos + " name=" + name);
+                infoDiag.show();
+                /* Do not propagate */
+                return true;
+            }
+        });
+
+        myBTAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if (myBTAdapter == null) {
+            Log.e("BTLIST", "No BT adpater installed");
+            showError();
+            return;
+        }
+
+        Log.i("BTLIST", "Starting in mode: " + curMode);
+        Log.i("BTLIST", "Calibrated to txPower: " + txPower + " dBm");
+
+        if (!myBTAdapter.isEnabled()) {
+            Log.d("BTLIST", "BT adapter is not enabled");
+            Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+            startActivityForResult(enableBT, REQUEST_ENABLE_BT);
+        } else {
+            doDiscovery();
+        }
+
+        IntentFilter justFound = new IntentFilter(BluetoothDevice.ACTION_FOUND);
+        registerReceiver(myBTRecv, justFound);
+    }
+
+    @Override
+    protected void onDestroy() {
+        unregisterReceiver(myBTRecv);
+        super.onDestroy();
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_ENABLE_BT) {
@@ -235,12 +328,6 @@ public class BlueMapMainList extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        unregisterReceiver(myBTRecv);
-        super.onDestroy();
-    }
-
-    @Override
     protected void onResume() {
         super.onResume();
         refresh = new Timer();
@@ -250,11 +337,10 @@ public class BlueMapMainList extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        if (!showAll) {
-                            /* Clear the list, so that only currently discoverable devices are showed */
-                            btDistClass = new HashMap<>();
-                            btList.setAdapter(null);
-                        }
+                        updatePreferences();
+                        /* Clear the list, so that only currently discoverable devices are showed */
+                        btDistClass = new HashMap<>();
+                        btList.setAdapter(null);
                         doDiscovery();
                     }
                 });
@@ -284,6 +370,10 @@ public class BlueMapMainList extends AppCompatActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Log.d("BTLIST", "Pressed settings");
+            Intent intent = new Intent();
+            intent.setClassName(this, "com.mcproject.rounak.bluemap.SettingsActivity");
+            startActivity(intent);
             return true;
         }
 

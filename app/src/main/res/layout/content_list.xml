@@ -8,6 +8,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
+    android:id="@+id/main_list"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context=".BlueMapMainList"
     android:weightSum="1">
@@ -18,7 +19,6 @@
         android:id="@+id/bt_list"
         android:choiceMode="none"
         android:layout_alignParentStart="true"
-        android:layout_weight="1.0"
         android:layout_alignParentEnd="true" />
 
 </RelativeLayout>

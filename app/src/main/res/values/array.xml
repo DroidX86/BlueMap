@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="mode_keys">
+        <item>Average</item>>
+        <item>Indoor</item>
+        <item>Outdoor</item>
+    </string-array>
+
+    <string-array name="mode_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>>
+    </string-array>
+</resources>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory
+        android:title="@string/pref_heading_calib"
+        android:key="pref_key_calibration">
+        <EditTextPreference
+            android:key="pref_key_tx_power"
+            android:title="@string/tx_power"
+            android:summary="@string/tx_power_summ"
+            android:inputType="numberSigned"
+            android:defaultValue="50"/>
+        <ListPreference
+            android:key="pref_key_mode_choice"
+            android:title="@string/mode_choice"
+            android:summary="@string/mode_choice_summ"
+            android:defaultValue="0"
+            android:entries="@array/mode_keys"
+            android:entryValues="@array/mode_values"/>
+        </PreferenceCategory>
+
+</PreferenceScreen>
