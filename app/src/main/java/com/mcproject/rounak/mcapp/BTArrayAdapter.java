@@ -1,4 +1,4 @@
-package com.mcproject.rounak.bluemap;
+package com.mcproject.rounak.mcapp;
 
 import android.annotation.SuppressLint;
 import android.content.Context;

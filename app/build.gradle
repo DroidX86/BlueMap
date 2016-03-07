@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "com.mcproject.rounak.bluemap"
+        applicationId "com.mcproject.rounak.mcapp"
         minSdkVersion 21
         targetSdkVersion 22
         versionCode 1

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">BlueMap</string>
+    <string name="app_name">BlueSense</string>
     <string name="action_settings">Settings</string>
     <string name="neighbor_placeholder">Neighbor</string>
     <string name="rssi_placeholder">RSSI</string>

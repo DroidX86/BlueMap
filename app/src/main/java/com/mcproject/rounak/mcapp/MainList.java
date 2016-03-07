@@ -1,7 +1,6 @@
-package com.mcproject.rounak.bluemap;
+package com.mcproject.rounak.mcapp;
 
 import android.app.AlertDialog;
-import android.app.FragmentTransaction;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
@@ -30,7 +29,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-public class BlueMapMainList extends AppCompatActivity {
+public class MainList extends AppCompatActivity {
 
     private ListView btList;
     private BluetoothAdapter myBTAdapter;
@@ -53,9 +52,9 @@ public class BlueMapMainList extends AppCompatActivity {
     protected Double txPower;
 
     /* Values for the propagation constant */
-    public final Double n_avg = 4.2119;
+    public final Double n_avg = 3.0;
     public final Double n_indoor = 2.0;
-    public final Double n_outdoor = 6.0;
+    public final Double n_outdoor = 4.0;
 
     /* Mode definitons */
     public final String AVERAGE = "Average";
@@ -82,7 +81,7 @@ public class BlueMapMainList extends AppCompatActivity {
     public final String FAR = "Far away";
     public final String NOPE = "Not close";
 
-    public BlueMapMainList() {
+    public MainList() {
         /* Set up calibration constants to default */
         curMode = INDOOR;
         txPower = -50.0;
@@ -231,7 +230,7 @@ public class BlueMapMainList extends AppCompatActivity {
      * Show error dialogue and exit
      */
     private void showError() {
-        AlertDialog errDiag = new AlertDialog.Builder(BlueMapMainList.this).create();
+        AlertDialog errDiag = new AlertDialog.Builder(MainList.this).create();
         errDiag.setTitle("Error");
         errDiag.setMessage("Could not load bluetooth neighbors");
         errDiag.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
@@ -264,7 +263,7 @@ public class BlueMapMainList extends AppCompatActivity {
                 String showing = (String) adapter.getAdapter().getItem(pos);
                 String name = showing.split(":::")[0];
                 /* Show more info in alert dialog */
-                final AlertDialog infoDiag = new AlertDialog.Builder(BlueMapMainList.this).create();
+                final AlertDialog infoDiag = new AlertDialog.Builder(MainList.this).create();
                 infoDiag.setTitle(name + "\'s details");    /* Set title */
                 String message = "Address:  " + btAddress.get(name);    /* Set address */
                 /* Build message to show */
@@ -345,7 +344,7 @@ public class BlueMapMainList extends AppCompatActivity {
                     }
                 });
             }
-        }, 0, REFRESH_INTERVAL);       /* refresh every 30 seconds */
+        }, 0, REFRESH_INTERVAL);       /* refresh every interval seconds */
     }
 
     @Override
@@ -372,7 +371,7 @@ public class BlueMapMainList extends AppCompatActivity {
         if (id == R.id.action_settings) {
             Log.d("BTLIST", "Pressed settings");
             Intent intent = new Intent();
-            intent.setClassName(this, "com.mcproject.rounak.bluemap.SettingsActivity");
+            intent.setClassName(this, "com.mcproject.rounak.mcapp.SettingsActivity");
             startActivity(intent);
             return true;
         }

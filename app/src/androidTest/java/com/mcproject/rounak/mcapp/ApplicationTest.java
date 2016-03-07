@@ -1,4 +1,4 @@
-package com.mcproject.rounak.bluemap;
+package com.mcproject.rounak.mcapp;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

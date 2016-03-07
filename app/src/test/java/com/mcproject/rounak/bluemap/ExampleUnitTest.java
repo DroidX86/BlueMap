@@ -1,4 +1,4 @@
-package com.mcproject.rounak.bluemap;
+package com.mcproject.rounak.mcapp;
 
 import org.junit.Test;
 

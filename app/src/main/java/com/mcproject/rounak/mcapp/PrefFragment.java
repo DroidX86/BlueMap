@@ -1,12 +1,12 @@
-package com.mcproject.rounak.bluemap;
+package com.mcproject.rounak.mcapp;
 
 import android.os.Bundle;
 import android.preference.PreferenceFragment;
 
 /**
- * Created by rounak on 7/3/16.
+ * Non-default file template :)
  */
-public class BlueMapPrefFragment extends PreferenceFragment {
+public class PrefFragment extends PreferenceFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

@@ -1,23 +1,20 @@
-package com.mcproject.rounak.bluemap;
+package com.mcproject.rounak.mcapp;
 
 import android.app.Fragment;
 import android.app.FragmentTransaction;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
 import android.view.KeyEvent;
 
-import java.util.List;
-
 /**
- * Created by rounak on 7/3/16.
+ * Non-default file template :)
  */
 public class SettingsActivity extends PreferenceActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         FragmentTransaction ft = getFragmentManager().beginTransaction();
-        Fragment sett = new BlueMapPrefFragment();
-        ft.replace(android.R.id.content, new BlueMapPrefFragment());
+        Fragment sett = new PrefFragment();
+        ft.replace(android.R.id.content, sett);
         ft.commit();
     }
 
