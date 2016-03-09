@@ -2,7 +2,7 @@
     <string name="app_name">BlueSense</string>
     <string name="action_settings">Settings</string>
     <string name="neighbor_placeholder">Neighbor</string>
-    <string name="rssi_placeholder">RSSI</string>
+    <string name="desc_placeholder">Description</string>
 
     <string name="pref_heading_calib">Calibration</string>
     <string name="pref_heading_other">Other</string>

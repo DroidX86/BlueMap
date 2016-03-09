@@ -14,8 +14,9 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/rssi_placeholder"
-        android:id="@+id/rssi"
-        android:layout_gravity="right"
-        android:textSize="@dimen/rssi_size" />
+        android:text="@string/desc_placeholder"
+        android:id="@+id/desc"
+        android:textSize="@dimen/desc_size"
+        android:gravity="end"
+        android:layout_gravity="right" />
 </LinearLayout>

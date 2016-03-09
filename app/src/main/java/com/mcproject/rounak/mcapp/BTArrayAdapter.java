@@ -10,6 +10,9 @@ import android.widget.TextView;
 
 import java.util.List;
 
+/**
+ * Custom ArrayAdapter for showing a single Bluetooth neighbor entry
+ */
 public class BTArrayAdapter extends ArrayAdapter<String> {
     private Context context;
     private List<String> values;
@@ -24,14 +27,15 @@ public class BTArrayAdapter extends ArrayAdapter<String> {
         LayoutInflater inflater = (LayoutInflater) context.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
         @SuppressLint("ViewHolder") View row = inflater.inflate(R.layout.row_layout, parent, false);
         TextView neighbor = (TextView) row.findViewById(R.id.neighbor);
-        TextView rssi = (TextView) row.findViewById(R.id.rssi);
+        TextView desc = (TextView) row.findViewById(R.id.desc);
 
+        /* String is sent here packed, unpack it */
         String[] unpacked = values.get(position).split(":::");
-        String nStr = unpacked[0];
-        String dStr = unpacked[1];
+        String nStr = unpacked[0];  //Name of neighbor
+        String dStr = unpacked[1];  //Class info to show
 
         neighbor.setText(nStr);
-        rssi.setText(dStr);
+        desc.setText(dStr);
 
         return row;
     }

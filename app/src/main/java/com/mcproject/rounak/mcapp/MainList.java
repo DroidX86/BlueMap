@@ -52,9 +52,9 @@ public class MainList extends AppCompatActivity {
     protected Double txPower;
 
     /* Values for the propagation constant */
-    public final Double n_avg = 3.0;
+    public final Double n_avg = 4.2119;
     public final Double n_indoor = 2.0;
-    public final Double n_outdoor = 4.0;
+    public final Double n_outdoor = 6.5;
 
     /* Mode definitons */
     public final String AVERAGE = "Average";
@@ -72,8 +72,8 @@ public class MainList extends AppCompatActivity {
 
     /* Distance class definitions, defined by upper limit / 5.0 */
     public final double IMMEDIATE_TOP = 2.0;
-    public final double NEAR_TOP = 4.0;
-    public final double FAR_TOP = 6.0;
+    public final double NEAR_TOP = 6.0;
+    public final double FAR_TOP = 10.0;
 
     /* Distance class display strings */
     public final String IMMEDIATE = "Very close";
@@ -81,6 +81,9 @@ public class MainList extends AppCompatActivity {
     public final String FAR = "Far away";
     public final String NOPE = "Not close";
 
+    /**
+     * Set up list, with default variables and register receiver
+     */
     public MainList() {
         /* Set up calibration constants to default */
         curMode = INDOOR;
@@ -95,7 +98,7 @@ public class MainList extends AppCompatActivity {
                     /* Get device name and rssi value */
                     BluetoothDevice nghbr = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
                     short rssi = intent.getShortExtra(BluetoothDevice.EXTRA_RSSI, Short.MIN_VALUE);
-                    Log.d("BTLIST", "Discovered: " + nghbr.getName() + ":\t" + rssi);
+                    Log.i("BTLIST", "Discovered: " + nghbr.getName() + ":\t" + rssi);
                     /* Add the address and RSSI*/
                     btRSSI.put(nghbr.getName(), rssi);
                     btAddress.put(nghbr.getName(), nghbr.getAddress());
@@ -108,16 +111,19 @@ public class MainList extends AppCompatActivity {
         };
     }
 
+    /**
+     * Check changes to preferences before continuing with discovery
+     */
     protected void updatePreferences() {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(this);
-        Log.d("BTPREF", "Reading shared prefs");
+        Log.i("BTPREF", "Reading shared prefs");
 
         Double txPref = 50.0;
         String gotVal = pref.getString("pref_key_tx_power", null);
         if (gotVal != null) {
             txPref = Double.parseDouble(gotVal);
         }
-        Log.d("BTPREF", "Read txPower as: " + txPref);
+        Log.i("BTPREF", "Read txPower as: " + txPref);
         this.txPower = txPref * -1.0;
 
         int modePref = 1;
@@ -125,7 +131,7 @@ public class MainList extends AppCompatActivity {
         if (gotVal != null) {
             modePref = Integer.parseInt(gotVal);
         }
-        Log.d("BTPREF", "Read location mode as: " + modePref);
+        Log.i("BTPREF", "Read location mode as: " + modePref);
         switch (modePref){
             case 1:
                 this.curMode = INDOOR;
@@ -143,13 +149,17 @@ public class MainList extends AppCompatActivity {
      * @param context Passed from upper call
      */
     protected void refreshList(Context context) {
-        /* TODO: Make more efficient by adding instead of redrawing */
+        /* TODO: Make more efficient by adding instead of redrawing ... somehow */
         List<String> vals = new ArrayList<>();
         for (Map.Entry<String, String> entry : btDistClass.entrySet()) {
-            String toShow = entry.getKey() + ":::" + entry.getValue();
-            vals.add(toShow);
+            /* Entries are packed into a single string */
+            String packed = entry.getKey() + ":::" + entry.getValue();
+            vals.add(packed);
         }
         btList.setAdapter(new BTArrayAdapter(context, vals));
+        /* Set subtitle as number of devices detected */
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar.setSubtitle("Detected " + vals.size() + " bluetooth device(s)");
     }
 
     /**
@@ -158,7 +168,10 @@ public class MainList extends AppCompatActivity {
      * @return Double The approximated distance
      */
     protected Double formula (Double rssi) {
-        Double upside = rssi + txPower;
+        /*
+        distance = 10 ^ (|Transmission Power at 1m - RSSI| / 10 * n)
+         */
+        Double upside = Math.abs(rssi - txPower);
         Double downside;
         switch(curMode) {
             case INDOOR:
@@ -205,16 +218,16 @@ public class MainList extends AppCompatActivity {
             btLPF.put(name, rssi/1.0);
         }
         Double curLPF = btLPF.get(name);
+        /* Tn = a*Tn-1 + (1-a)*RSSiI */
         Double nextLPF = ALPHA*curLPF + (1 - ALPHA) * rssi;
         btLPF.put(name, nextLPF);
         /* Estimate distance */
         Double distance = formula(nextLPF);
-        distance /= Math.pow(10, 6);       /* adjust units */
-        Log.d("BTLIST", "Approximated distance to " + name + " is " + distance);
+        Log.i("BTLIST", "Approximated distance to " + name + " is " + distance);
         btDistance.put(name, distance);
         /* Return the distance class description */
         String distClass = getDistanceClass(distance);
-        Log.d("BTLIST", name + " classified as: " + distClass);
+        Log.i("BTLIST", name + " classified as: " + distClass);
         btDistClass.put(name, distClass);
     }
 
@@ -222,7 +235,7 @@ public class MainList extends AppCompatActivity {
      * Start a Bluetooth discovery phase
      */
     private void doDiscovery() {
-        Log.d("BTLIST", "Gonna start discovery");
+        Log.i("BTLIST", "Gonna start discovery");
         myBTAdapter.startDiscovery();
     }
 
@@ -230,6 +243,7 @@ public class MainList extends AppCompatActivity {
      * Show error dialogue and exit
      */
     private void showError() {
+        Log.e("BTLIST", "Error");
         AlertDialog errDiag = new AlertDialog.Builder(MainList.this).create();
         errDiag.setTitle("Error");
         errDiag.setMessage("Could not load bluetooth neighbors");
@@ -269,9 +283,9 @@ public class MainList extends AppCompatActivity {
                 /* Build message to show */
                 message = message + "\nRSSI:  " + btRSSI.get(name) + " dBm";
                 Double d = btDistance.get(name);
-                DecimalFormat df = new DecimalFormat("##.####");
+                DecimalFormat df = new DecimalFormat("###.####");    /* Show up to 4 digits of precision */
                 df.setRoundingMode(RoundingMode.CEILING);
-                message = message + "\nAppr.Distance:  " + df.format(d) + " m";
+                message = message + "\nApx. Distance:  " + df.format(d) + " m";
                 infoDiag.setMessage(message);
                 infoDiag.setButton(AlertDialog.BUTTON_NEUTRAL, "Dismiss", new DialogInterface.OnClickListener() {
                     @Override
@@ -279,7 +293,7 @@ public class MainList extends AppCompatActivity {
                         dialog.dismiss();
                     }
                 });
-                Log.d("BTLIST", "Long press: pos=" + pos + " name=" + name);
+                Log.i("BTLIST", "Long press at " + pos + " on " + name);
                 infoDiag.show();
                 /* Do not propagate */
                 return true;
@@ -288,6 +302,7 @@ public class MainList extends AppCompatActivity {
 
         myBTAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        /* Check if machine has a bluetooth adapter or not */
         if (myBTAdapter == null) {
             Log.e("BTLIST", "No BT adpater installed");
             showError();
@@ -297,8 +312,9 @@ public class MainList extends AppCompatActivity {
         Log.i("BTLIST", "Starting in mode: " + curMode);
         Log.i("BTLIST", "Calibrated to txPower: " + txPower + " dBm");
 
+        /* Enable the bluetooth if not enabled */
         if (!myBTAdapter.isEnabled()) {
-            Log.d("BTLIST", "BT adapter is not enabled");
+            Log.w("BTLIST", "BT adapter is not enabled");
             Intent enableBT = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBT, REQUEST_ENABLE_BT);
         } else {
@@ -311,13 +327,16 @@ public class MainList extends AppCompatActivity {
 
     @Override
     protected void onDestroy() {
+        /* Unregister receiver and exit */
         unregisterReceiver(myBTRecv);
         super.onDestroy();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        /* Is the result from our REQUEST_ENABLE_BT intent? */
         if (requestCode == REQUEST_ENABLE_BT) {
+            /* Was the intent successful? */
             if (resultCode == RESULT_OK) {
                 doDiscovery();
             } else {
@@ -329,6 +348,7 @@ public class MainList extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        /* Schedule a new discovery to run after some interval */
         refresh = new Timer();
         refresh.schedule(new TimerTask() {
             @Override
@@ -336,6 +356,7 @@ public class MainList extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        /* Check for changes in preferences */
                         updatePreferences();
                         /* Clear the list, so that only currently discoverable devices are showed */
                         btDistClass = new HashMap<>();
@@ -349,6 +370,7 @@ public class MainList extends AppCompatActivity {
 
     @Override
     protected void onPause() {
+        /* Timers should be canceled if paused */
         refresh.cancel();
         super.onPause();
     }
@@ -367,9 +389,9 @@ public class MainList extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
+        /* Start an intent to launch the SettingsActivity */
         if (id == R.id.action_settings) {
-            Log.d("BTLIST", "Pressed settings");
+            Log.i("BTLIST", "Starting settings activity");
             Intent intent = new Intent();
             intent.setClassName(this, "com.mcproject.rounak.mcapp.SettingsActivity");
             startActivity(intent);
