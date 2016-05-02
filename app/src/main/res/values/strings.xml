@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">BlueSense</string>
+    <string name="action_settings">Settings</string>
+    <string name="neighbor_placeholder">Neighbor</string>
+    <string name="desc_placeholder">Description</string>
+
+    <string name="pref_heading_calib">Calibration</string>
+    <string name="pref_heading_other">Other</string>
+
+    <string name="mode_choice">Choose your surroundings</string>
+    <string name="mode_choice_summ">Signal strength propagation depends on it</string>
+
+    <string name="tx_power">Transmission Power</string>
+    <string name="tx_power_summ">As measured 1m away from this device</string>
+</resources>
